@@ -2,14 +2,14 @@
 	heap
 	This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
+
 
 use std::cmp::Ord;
 use std::default::Default;
 
 pub struct Heap<T>
 where
-    T: Default,
+    T: Default + Ord,
 {
     count: usize,
     items: Vec<T>,
@@ -18,7 +18,7 @@ where
 
 impl<T> Heap<T>
 where
-    T: Default,
+    T: Default + Ord,
 {
     pub fn new(comparator: fn(&T, &T) -> bool) -> Self {
         Self {
@@ -37,7 +37,19 @@ where
     }
 
     pub fn add(&mut self, value: T) {
-        //TODO
+        self.items.push(value);
+        self.count += 1;
+
+        let mut idx = self.count;
+        while idx > 1 {
+            let parent_idx = self.parent_idx(idx); // 提前计算 parent_idx
+            if (self.comparator)(&self.items[idx], &self.items[parent_idx]) {
+                self.items.swap(idx, parent_idx);
+                idx = parent_idx;
+            } else {
+                break;
+            }
+        }
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -57,8 +69,14 @@ where
     }
 
     fn smallest_child_idx(&self, idx: usize) -> usize {
-        //TODO
-		0
+        let left = self.left_child_idx(idx);
+        let right = self.right_child_idx(idx);
+
+        if right <= self.count && (self.comparator)(&self.items[right], &self.items[left]) {
+            right
+        } else {
+            left
+        }
     }
 }
 
@@ -75,17 +93,40 @@ where
     pub fn new_max() -> Self {
         Self::new(|a, b| a > b)
     }
+
+    fn heapify_down(&mut self, mut idx: usize) {
+        while self.children_present(idx) {
+            let smallest_child = self.smallest_child_idx(idx);
+            if (self.comparator)(&self.items[smallest_child], &self.items[idx]) {
+                self.items.swap(idx, smallest_child);
+                idx = smallest_child;
+            } else {
+                break;
+            }
+        }
+    }
 }
 
 impl<T> Iterator for Heap<T>
 where
-    T: Default,
+    T: Default + Ord,
 {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
-        //TODO
-		None
+        if self.is_empty() {
+            None
+        } else {
+            // 将堆顶元素与最后一个元素交换
+            self.items.swap(1, self.count);
+            let result = self.items.pop();
+            self.count -= 1;
+
+            // 下沉操作，维护堆的性质
+            self.heapify_down(1);
+
+            result
+        }
     }
 }
 
